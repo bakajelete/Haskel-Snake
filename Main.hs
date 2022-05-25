@@ -1,5 +1,7 @@
 -- stack --resolver lts --install-ghc runghc --package gloss --package random
+
 {-# LANGUAGE NamedFieldPuns #-}
+
 module Main where
 
 import Snake
@@ -17,6 +19,7 @@ data GUIState  --Ez az osztaly tartalmazza az jatek kulonfele funkciok allapotat
     , idx :: Int
     }
 
+changeLevel :: GUIState -> Int -> GUIState
 changeLevel levelSelect@LevelSelect { idx, levels } offs --A levelselet allapotban megvaltoztaja, hogy mi van kivalasztva
   = levelSelect { idx = (idx + offs + count) `mod` count }
   where
@@ -39,7 +42,62 @@ initialGuiState = LevelSelect levels 0
           "#            #",
           "#            #",
           "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
           "##############"
+        ], [(2, 2)], DOWN),
+        (readLevel $ [
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #",
+          "#            #"
         ], [(2, 2)], DOWN),
         (readLevel $ [
           "#################", --a bal felso fal kocka kordinatja a (0,0)
@@ -89,6 +147,7 @@ initialGuiState = LevelSelect levels 0
     readCell ' ' = FREE
     readCell '#' = WALL
 
+toFloat :: (Integral a, Num b) => (a, a) -> (b, b)
 toFloat (x, y) = (fromIntegral x, fromIntegral y)
 
 windowSize = (640, 480) --Alapertelmezett ablak meret
@@ -106,17 +165,24 @@ render LevelSelect { levels, idx } = renderGrid grid snake []
 render Game { gameState } = renderGame gameState
   where
     renderGame GameState { snake, food, level }
-      = renderGrid level snake [food]
+      = pictures $ (renderGrid level snake [food]):gameOverScreen
+    gameOverScreen
+      = if not $ isRunning gameState
+      then (color blue $ 
+            translate (-200) (0) $ 
+            scale 0.5 0.5 $ 
+            text "GAME OVER"):[]
+      else []
 
 renderGrid :: Grid -> Snake -> [Pos] -> Picture --Ez kirajzolja a palyat, magat a kigyo
 renderGrid grid snake food
   = pictures $
-    map (convertToPicture black) wallCoords ++
+    map (convertToPicture black.swapCoords) wallCoords ++
     map (convertToPicture blue) snake ++
     map (convertToPicture red) food
   where
     wallCoords :: [Pos]  --Lekeri, hogy melyik palya van kivalasztva
-    wallCoords = map swapCoords $ concat $ map toCoords $ zip [0 ..] $ map (elemIndices WALL) grid
+    wallCoords = concat $ map toCoords $ zip [0 ..] $ map (elemIndices WALL) grid
     toCoords (x, ys) = map ((,)x) ys --Atvaltja a kivalasztott koordinatak ak a rajzolashoz
     swapCoords (x, y) = (y, x)
   
@@ -182,5 +248,5 @@ handleKeys (EventKey (SpecialKey KeySpace) Down _ _) guiState@LevelSelect { idx,
 handleKeys _ gameState = gameState -- A handlekeys is figyeli, hogy a jatek allapot miyen, es ciklikusan keri az informaciot
 
 main :: IO () --stack Main.hs 
-main = play window background 1 initialGuiState render handleKeys update --glos konyvtarbol jon a metodus, ez elintditja 
+main = play window background 3 initialGuiState render handleKeys update --glos konyvtarbol jon a metodus, ez elintditja 
                             -- egy masodpercenkent hanyszor legyen update, jatek sebessege 

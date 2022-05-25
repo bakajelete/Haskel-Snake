@@ -4,6 +4,7 @@ module Snake where
 
 import Data.List
 import System.Random
+import System.IO.Unsafe
 
 data Dir = UP | DOWN | LEFT | RIGHT deriving (Eq, Ord) --Letrehozza az irany tipust
 type Pos = (Int, Int) --Pozicio tipus
@@ -24,7 +25,7 @@ data GameState = GameState  --Ez az osztaly szedi ossze a kulonfele altipusokat
   }
 
 getCell :: Grid -> Pos -> Cell --Mehatarozza adott kordinataju cellak tipusat, hogy utkozeskor tudja, hogy game over vagy nem 
-getCell grid (x, y) = grid !! x !! y
+getCell grid (x, y) = grid !! y !! x
 
 isRunning :: GameState -> Bool --Megadja, hogy a jatek meg folyamatban van-e
 isRunning GameState { state }
@@ -38,7 +39,7 @@ initialGameState level snake dir
     , dir = dir
     , food = (0, 0) -- overwritten by generateFood
     , level = level
-    , rand = mkStdGen 100
+    , rand = mkStdGen $ unsafePerformIO $ randomIO -- seedeli a random generatort
     , state = RUNNING
     }
 
@@ -73,8 +74,9 @@ generateFood gameState@GameState { rand, level, snake }
   | otherwise = gameState { rand = rand1, food = coord }
   where
     freeGridCoords :: [Pos] --az osszes szabad cella a jatekteren belul
-    freeGridCoords = concat $ map toCoords $ zip [0 ..] $ map (elemIndices FREE) level
+    freeGridCoords = map swapCoords $ concat $ map (toCoords) $ zip [0 ..] $ map (elemIndices FREE) level
     toCoords (x, ys) = map ((,)x) ys
+    swapCoords (x, y) = (y, x)
 
     possibleCoords :: [Pos] -- a szabad cellekbol kiveszi a kigyo altal foglatat
     possibleCoords = filter (not.(flip elem snake)) freeGridCoords
