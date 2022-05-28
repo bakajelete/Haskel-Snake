@@ -87,3 +87,50 @@ generateFood gameState@GameState { rand, level, snake }
 
 changeDir :: GameState -> Dir -> GameState --megvaltoztatom a kigyo haladasi iranyat a jatekallapoton belul
 changeDir gameState dir = gameState { dir = dir }
+
+-- Testing
+
+runTest :: (Grid, [Pos], Pos, Dir, (GameState -> Bool)) -> Bool
+runTest (level, snake, food, dir, cond)
+  = cond $ move $ GameState
+    { snake = snake
+    , dir = dir
+    , food = food
+    , level = level
+    , rand = mkStdGen $ unsafePerformIO $ randomIO
+    , state = RUNNING
+    }
+
+runTests :: IO ()
+runTests = mapM_ (\(idx, res) -> putStrLn $ (padded idx) ++ "..." ++ (showRes res)) $ zip [1 ..] $ map runTest tests
+  where
+    padded num
+      | num < 10 = "0" ++ (show num)
+      | otherwise = show num
+    showRes res
+      | res = "Success"
+      | otherwise = "Failed"
+    tests
+      = [ (level01, [(1, 1)], ((-1), (-1)), RIGHT, (\GameState { snake } -> head snake == (2, 1)))
+        , (level01, [(1, 1)], ((-1), (-1)), LEFT, (\GameState { state } -> state == LOST))
+        , (level01, [(1, 1)], (2, 1), RIGHT, (\GameState { snake, food } -> length snake == 2 && food /= (2, 1)))
+        , (level02, [(1, 1)], (2, 1), RIGHT, (\GameState { state } -> state == WIN))
+        ]
+      where
+        level01 :: Grid
+        level01 = readLevel $
+          [ "##############"
+          , "#            #"
+          , "##############"
+          ]
+        level02 :: Grid
+        level02 = readLevel $
+          [ "##############"
+          , "#  ###########"
+          , "##############"
+          ]
+  
+        readLevel :: [String] -> Grid --Az adott tipusu cellak ertelmezese a kirajzolashoz
+        readLevel = map (map readCell)
+        readCell ' ' = FREE
+        readCell '#' = WALL
